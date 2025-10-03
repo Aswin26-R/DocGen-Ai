@@ -1,0 +1,69 @@
+Build a full-stack AI-powered web application called "DocGen – AI Documentation & Learning Assistant."
+
+🎯 Goal  
+DocGen takes user-uploaded documents (PDF, DOCX, TXT) or fetched academic papers from Arxiv and automatically generates **quizzes, summaries, and Q&A exercises** to make learning more interactive.  
+
+🛠️ Tech Stack  
+- Frontend: Streamlit  
+- Backend / AI Orchestration: LangChain  
+- Generative AI: Google Gemini API  
+- Authentication: Auth0  
+- Vector Embeddings: sentence-transformers  
+- Vector Storage: FAISS (local or cloud option)  
+- Academic Papers: arxiv Python library  
+- Deployment: Replit + local dev option  
+
+✨ Core Features  
+1. **User Authentication**  
+   - Secure login/logout using Auth0  
+   - Store Google API Key in session only (not persisted)  
+
+2. **Document Library**  
+   - Upload PDFs, DOCX, TXT files  
+   - Search and import papers from Arxiv  
+   - Manage documents (view/delete)  
+
+3. **Learning Modules**  
+   - **Multiple Choice Quiz**: AI-generated with instant feedback + references  
+   - **Sentence Completion**: Test recall of key terms  
+   - **AI-Graded Q&A**: Compare user answers against AI-generated ideal responses (semantic similarity scoring)  
+   - **Summarization**: Markdown-formatted concise summaries saved to library  
+
+4. **Progress Tracking**  
+   - Dashboard showing performance metrics (average scores, exercises completed)  
+   - GitHub-style activity calendar to visualize daily study streaks  
+
+⚙️ Implementation Details  
+- Store embeddings using FAISS  
+- Use LangChain pipelines for quiz/question generation and evaluation  
+- Summarization powered by Gemini API  
+- Streamlit charts for progress visualization  
+- Use `.streamlit/secrets.toml` for Auth0 + API keys  
+
+📂 Suggested Project Structure  
+docgen/  
+│── backend/  
+│   ├── orchestrator.py        # LangChain orchestration  
+│   ├── embeddings.py          # FAISS + vector search  
+│   ├── auth.py                # Auth0 integration  
+│   └── utils.py  
+│  
+│── frontend/  
+│   ├── Home Page.py           # Main app entry  
+│   ├── library.py             # Upload + Arxiv integration  
+│   ├── quiz.py                # MCQs + Sentence Completion  
+│   ├── summary.py             # Summarization module  
+│   └── dashboard.py           # Progress tracking  
+│  
+│── data/                      # Local storage (optional)  
+│── .streamlit/secrets.toml    # Auth0 + Gemini credentials  
+│── requirements.txt  
+│── README.md  
+
+🗺️ Roadmap (Future Enhancements)  
+- Replace FAISS with Supabase or Qdrant for scalable storage  
+- Add Flashcard Decks with Spaced Repetition System (SRS)  
+- Implement Concept Mapping for visual knowledge graphs  
+- Multi-modal support (audio lecture transcription → text → learning modules)  
+
+👉 Generate the initial project with boilerplate code for Streamlit pages, LangChain pipelines, Auth0 integration, and placeholders for API keys.  
