@@ -82,6 +82,7 @@ DocGen/
 ├─ requirements.txt
 └─ README.md
 
+<img width="1878" height="676" alt="image" src="https://github.com/user-attachments/assets/77905b02-0d5c-4f5d-87b8-20253882abcd" />
 
 **Session State Management:**
 - Streamlit session_state as primary runtime storage
