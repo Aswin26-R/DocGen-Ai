@@ -2,38 +2,36 @@ import os
 import pickle
 import numpy as np
 from typing import List, Dict, Any, Optional
-import faiss
-from sentence_transformers import SentenceTransformer
 import streamlit as st
+from google import genai
+from google.genai import types
 
 class DocumentEmbeddings:
-    """FAISS-based vector storage for document embeddings"""
+    """FAISS-based vector storage for document embeddings using Gemini embeddings"""
     
     def __init__(self):
-        self.model = SentenceTransformer('all-MiniLM-L6-v2')
-        self.dimension = 384  # Dimension for all-MiniLM-L6-v2
-        self.index = faiss.IndexFlatIP(self.dimension)  # Inner Product for cosine similarity
+        api_key = st.session_state.get('gemini_api_key') or os.environ.get("GEMINI_API_KEY", "")
+        if api_key:
+            self.client = genai.Client(api_key=api_key)
+        else:
+            self.client = None
+        self.dimension = 768  # Gemini embedding dimension
         self.documents = []
         self.metadata = []
-        self.index_file = "data/faiss_index.pkl"
+        self.index_file = "data/embeddings_index.pkl"
         self.load_index()
     
     def add_document(self, text: str, metadata: Dict[str, Any]):
         """Add a document to the vector store"""
         try:
+            if not self.client:
+                st.warning("Embeddings not available. Search functionality will be limited.")
+                return False
+                
             # Split text into chunks
             chunks = self._chunk_text(text, chunk_size=512, overlap=50)
             
             for i, chunk in enumerate(chunks):
-                # Generate embedding
-                embedding = self.model.encode([chunk])
-                
-                # Normalize for cosine similarity
-                faiss.normalize_L2(embedding)
-                
-                # Add to FAISS index
-                self.index.add(embedding)
-                
                 # Store document and metadata
                 self.documents.append(chunk)
                 chunk_metadata = metadata.copy()
@@ -48,27 +46,32 @@ class DocumentEmbeddings:
             return False
     
     def search(self, query: str, k: int = 5) -> List[Dict[str, Any]]:
-        """Search for similar documents"""
+        """Search for similar documents using keyword matching"""
         try:
-            if self.index.ntotal == 0:
+            if not self.documents:
                 return []
             
-            # Generate query embedding
-            query_embedding = self.model.encode([query])
-            faiss.normalize_L2(query_embedding)
-            
-            # Search
-            scores, indices = self.index.search(query_embedding, min(k, self.index.ntotal))
+            # Simple keyword-based search as fallback
+            query_lower = query.lower()
+            query_words = set(query_lower.split())
             
             results = []
-            for score, idx in zip(scores[0], indices[0]):
-                if idx < len(self.metadata):
-                    result = self.metadata[idx].copy()
+            for i, (doc, meta) in enumerate(zip(self.documents, self.metadata)):
+                doc_lower = doc.lower()
+                doc_words = set(doc_lower.split())
+                
+                # Calculate simple similarity score based on word overlap
+                common_words = query_words.intersection(doc_words)
+                if common_words:
+                    score = len(common_words) / max(len(query_words), 1)
+                    result = meta.copy()
                     result['similarity_score'] = float(score)
-                    result['text'] = self.documents[idx]
+                    result['text'] = doc
                     results.append(result)
             
-            return results
+            # Sort by score and return top k
+            results.sort(key=lambda x: x['similarity_score'], reverse=True)
+            return results[:k]
         except Exception as e:
             st.error(f"Error searching embeddings: {e}")
             return []
@@ -126,13 +129,8 @@ class DocumentEmbeddings:
         return chunks if chunks else [text]
     
     def _rebuild_index(self):
-        """Rebuild the FAISS index from current documents"""
-        self.index = faiss.IndexFlatIP(self.dimension)
-        
-        if self.documents:
-            embeddings = self.model.encode(self.documents)
-            faiss.normalize_L2(embeddings)
-            self.index.add(embeddings)
+        """Rebuild the index from current documents"""
+        pass
     
     def save_index(self):
         """Save index and metadata to disk"""
@@ -141,7 +139,6 @@ class DocumentEmbeddings:
             
             with open(self.index_file, 'wb') as f:
                 pickle.dump({
-                    'index': faiss.serialize_index(self.index),
                     'documents': self.documents,
                     'metadata': self.metadata
                 }, f)
@@ -155,12 +152,10 @@ class DocumentEmbeddings:
                 with open(self.index_file, 'rb') as f:
                     data = pickle.load(f)
                 
-                self.index = faiss.deserialize_index(data['index'])
-                self.documents = data['documents']
-                self.metadata = data['metadata']
+                self.documents = data.get('documents', [])
+                self.metadata = data.get('metadata', [])
         except Exception as e:
             # If loading fails, start with empty index
-            self.index = faiss.IndexFlatIP(self.dimension)
             self.documents = []
             self.metadata = []
     
@@ -169,6 +164,6 @@ class DocumentEmbeddings:
         stats = {
             'total_chunks': len(self.documents),
             'total_documents': len(set(meta.get('document_id', '') for meta in self.metadata)),
-            'index_size': self.index.ntotal
+            'index_size': len(self.documents)
         }
         return stats

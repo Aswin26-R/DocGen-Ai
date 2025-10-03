@@ -4,7 +4,7 @@ integrations = ["python_gemini:1.0.0"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["bash"]
+packages = ["bash", "glibcLocales"]
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -37,3 +37,7 @@ outputType = "webview"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 46497
+externalPort = 3000
