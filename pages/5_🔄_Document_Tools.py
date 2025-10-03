@@ -1,4 +1,5 @@
 import streamlit as st
+import google.generativeai as genai
 from backend.auth import check_authentication, render_logout_button
 from backend.utils import initialize_session_state, get_document_by_id
 from backend.orchestrator import AIOrchestrator
