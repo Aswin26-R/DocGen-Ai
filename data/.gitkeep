@@ -1,0 +1,9 @@
+# This file ensures the data directory exists in version control
+# The data directory is used for:
+# - FAISS vector index storage (faiss_index.pkl)
+# - Temporary file processing
+# - Document embeddings cache
+
+# Files in this directory are typically generated at runtime:
+# - faiss_index.pkl: Vector embeddings for semantic search
+# - temp/: Temporary directory for PDF downloads from Arxiv
