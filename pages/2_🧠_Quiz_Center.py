@@ -166,6 +166,16 @@ with tab1:
                     'time_taken': 'Not tracked'  # Could implement timer
                 }
                 st.session_state.quiz_history.append(quiz_result)
+                
+                # Save to database
+                from backend.database import Database
+                if st.session_state.get('user_id'):
+                    try:
+                        db = Database()
+                        db.save_quiz_result(st.session_state.user_id, quiz_result)
+                    except:
+                        pass
+                
                 log_activity(f"Completed MCQ quiz on {quiz['document_title']} - Score: {score:.1f}%")
                 
                 # Clear current quiz
@@ -276,6 +286,16 @@ with tab2:
                     'completed_at': datetime.now().isoformat()
                 }
                 st.session_state.quiz_history.append(quiz_result)
+                
+                # Save to database
+                from backend.database import Database
+                if st.session_state.get('user_id'):
+                    try:
+                        db = Database()
+                        db.save_quiz_result(st.session_state.user_id, quiz_result)
+                    except:
+                        pass
+                
                 log_activity(f"Completed sentence completion on {completion['document_title']} - Score: {avg_score:.1f}%")
                 
                 # Clear current exercise
@@ -361,6 +381,16 @@ with tab3:
                         'completed_at': datetime.now().isoformat()
                     }
                     st.session_state.quiz_history.append(qa_result)
+                    
+                    # Save to database
+                    from backend.database import Database
+                    if st.session_state.get('user_id'):
+                        try:
+                            db = Database()
+                            db.save_quiz_result(st.session_state.user_id, qa_result)
+                        except:
+                            pass
+                    
                     log_activity(f"Completed Q&A exercise on {selected_doc['title']} - Score: {evaluation['score']:.1f}%")
                 
             except Exception as e:
@@ -376,7 +406,7 @@ with tab4:
         total_quizzes = len(st.session_state.quiz_history)
         avg_score = sum(q.get('score', 0) for q in st.session_state.quiz_history) / total_quizzes
         
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.metric("Total Quizzes", total_quizzes)
         with col2:
@@ -384,6 +414,25 @@ with tab4:
         with col3:
             recent_score = st.session_state.quiz_history[-1].get('score', 0) if st.session_state.quiz_history else 0
             st.metric("Latest Score", f"{recent_score:.1f}%")
+        with col4:
+            # Export all quiz history
+            quiz_export_text = "# Quiz History Report\n\n"
+            quiz_export_text += f"**Total Quizzes:** {total_quizzes}\n"
+            quiz_export_text += f"**Average Score:** {avg_score:.1f}%\n\n"
+            quiz_export_text += "---\n\n"
+            for q in reversed(st.session_state.quiz_history):
+                quiz_export_text += f"## {q['type'].replace('_', ' ').title()}\n"
+                quiz_export_text += f"**Document:** {q['document_title']}\n"
+                quiz_export_text += f"**Score:** {q.get('score', 0):.1f}%\n"
+                quiz_export_text += f"**Completed:** {q.get('completed_at', 'Unknown')}\n\n"
+            
+            st.download_button(
+                "📥 Export All",
+                data=quiz_export_text,
+                file_name="quiz_history.md",
+                mime="text/markdown",
+                use_container_width=True
+            )
         
         st.markdown("---")
         

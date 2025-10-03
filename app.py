@@ -11,6 +11,14 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Initialize database schema on first run
+try:
+    from backend.database import Database
+    db = Database()
+    db.init_schema()
+except Exception as e:
+    st.warning(f"Database initialization: {str(e)[:100]}. Using session-only storage.")
+
 # Initialize session state
 initialize_session_state()
 

@@ -67,6 +67,15 @@ with tab1:
                     # Add to session state
                     st.session_state.documents.append(document)
                     
+                    # Save to database
+                    from backend.database import Database
+                    if st.session_state.get('user_id'):
+                        try:
+                            db = Database()
+                            db.save_document(st.session_state.user_id, document)
+                        except:
+                            pass
+                    
                     # Add to vector store
                     embeddings.add_document(
                         document['content'],
@@ -126,6 +135,15 @@ with tab2:
                             if document:
                                 # Add to session state
                                 st.session_state.documents.append(document)
+                                
+                                # Save to database
+                                from backend.database import Database
+                                if st.session_state.get('user_id'):
+                                    try:
+                                        db = Database()
+                                        db.save_document(st.session_state.user_id, document)
+                                    except:
+                                        pass
                                 
                                 # Add to vector store
                                 embeddings.add_document(
@@ -223,6 +241,14 @@ with tab3:
                     if st.button(f"🗑️ Delete", key=f"del_{doc['id']}", type="secondary"):
                         if remove_document_by_id(doc['id']):
                             embeddings.remove_document(doc['id'])
+                            # Delete from database
+                            from backend.database import Database
+                            if st.session_state.get('user_id'):
+                                try:
+                                    db = Database()
+                                    db.delete_document(st.session_state.user_id, doc['id'])
+                                except:
+                                    pass
                             st.success("Document deleted!")
                             st.rerun()
 

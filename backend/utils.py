@@ -9,17 +9,45 @@ import uuid
 
 def initialize_session_state():
     """Initialize session state variables"""
-    if 'documents' not in st.session_state:
-        st.session_state.documents = []
+    from backend.database import Database
     
-    if 'summaries' not in st.session_state:
-        st.session_state.summaries = []
-    
-    if 'quiz_history' not in st.session_state:
-        st.session_state.quiz_history = []
-    
-    if 'activity_log' not in st.session_state:
-        st.session_state.activity_log = []
+    # Initialize database-backed data if user is authenticated
+    if st.session_state.get('authenticated') and st.session_state.get('user_id'):
+        try:
+            db = Database()
+            user_id = st.session_state.user_id
+            
+            if 'documents' not in st.session_state:
+                st.session_state.documents = db.get_documents(user_id)
+            
+            if 'summaries' not in st.session_state:
+                st.session_state.summaries = db.get_summaries(user_id)
+            
+            if 'quiz_history' not in st.session_state:
+                st.session_state.quiz_history = db.get_quiz_history(user_id)
+            
+            if 'activity_log' not in st.session_state:
+                st.session_state.activity_log = db.get_activity_log(user_id)
+        except Exception as e:
+            # Fallback to session-only storage if DB fails
+            if 'documents' not in st.session_state:
+                st.session_state.documents = []
+            if 'summaries' not in st.session_state:
+                st.session_state.summaries = []
+            if 'quiz_history' not in st.session_state:
+                st.session_state.quiz_history = []
+            if 'activity_log' not in st.session_state:
+                st.session_state.activity_log = []
+    else:
+        # Not authenticated, use empty session state
+        if 'documents' not in st.session_state:
+            st.session_state.documents = []
+        if 'summaries' not in st.session_state:
+            st.session_state.summaries = []
+        if 'quiz_history' not in st.session_state:
+            st.session_state.quiz_history = []
+        if 'activity_log' not in st.session_state:
+            st.session_state.activity_log = []
     
     if 'current_quiz' not in st.session_state:
         st.session_state.current_quiz = None
@@ -29,6 +57,8 @@ def initialize_session_state():
 
 def log_activity(action: str):
     """Log user activity with timestamp"""
+    from backend.database import Database
+    
     activity = {
         'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M'),
         'action': action,
@@ -36,7 +66,15 @@ def log_activity(action: str):
     }
     st.session_state.activity_log.append(activity)
     
-    # Keep only last 50 activities
+    # Save to database if authenticated
+    if st.session_state.get('authenticated') and st.session_state.get('user_id'):
+        try:
+            db = Database()
+            db.log_activity(st.session_state.user_id, action)
+        except:
+            pass  # Fail silently
+    
+    # Keep only last 50 activities in session
     if len(st.session_state.activity_log) > 50:
         st.session_state.activity_log = st.session_state.activity_log[-50:]
 

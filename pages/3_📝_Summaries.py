@@ -146,6 +146,15 @@ with tab1:
                         # Add to session state
                         st.session_state.summaries.append(summary_record)
                         
+                        # Save to database
+                        from backend.database import Database
+                        if st.session_state.get('user_id'):
+                            try:
+                                db = Database()
+                                db.save_summary(st.session_state.user_id, summary_record)
+                            except:
+                                pass
+                        
                         # Log activity
                         log_activity(f"Generated summary for: {selected_doc['title']}")
                         
@@ -284,6 +293,14 @@ with tab2:
                     if st.button("🗑️ Delete", key=f"delete_{summary['id']}", type="secondary"):
                         # Remove from summaries
                         st.session_state.summaries = [s for s in st.session_state.summaries if s['id'] != summary['id']]
+                        # Delete from database
+                        from backend.database import Database
+                        if st.session_state.get('user_id'):
+                            try:
+                                db = Database()
+                                db.delete_summary(st.session_state.user_id, summary['id'])
+                            except:
+                                pass
                         log_activity(f"Deleted summary for: {summary['document_title']}")
                         st.success("Summary deleted!")
                         st.rerun()
